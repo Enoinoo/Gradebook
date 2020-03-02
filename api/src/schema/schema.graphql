@@ -1,0 +1,19 @@
+type Query {
+  getUser: String!
+  go: String!
+  populateUsers: String!
+}
+
+type Mutation {
+  createUser: String!
+}
+
+type Subscription {
+  info: String!
+}
+
+type User {
+  id: ID!
+  name: String!
+  grade: Float
+}
