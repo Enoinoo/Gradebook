@@ -147,10 +147,11 @@ class StudentTable extends React.Component<IProps, IState> {
               setTimeout(() => {
                 resolve();
                 if (oldData) {
-                  this.setState(prevState => {
-                    const students = [...prevState.students];
-                    students[students.indexOf(oldData)] = newData;
-                    return { ...prevState, students };
+                  this.setState(() => {
+                    const students: Student[] = this.state.students;
+                    const updatedGrade: number = newData.grade;
+                    students[students.indexOf(oldData)].grade = updatedGrade;
+                    return { students };
                   });
                 }
               }, 600);
