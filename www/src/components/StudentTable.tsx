@@ -39,6 +39,8 @@ interface IState {
 
 interface IProps {}
 
+const NUMBEROFSTUDENTS = 1000;
+
 const tableIcons: Icons = {
   Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
   Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
@@ -100,7 +102,7 @@ class StudentTable extends React.Component<IProps, IState> {
   }
 
   componentDidMount() {
-    fetch("https://randomuser.me/api/?results=1000")
+    fetch("https://randomuser.me/api/?results=" + NUMBEROFSTUDENTS)
       .then(response => response.json())
       .then(response => {
         var results = response.results;
@@ -157,7 +159,7 @@ class StudentTable extends React.Component<IProps, IState> {
               }, 600);
             })
         }}
-        options={{ pageSize: 10 }}
+        options={{ pageSize: NUMBEROFSTUDENTS }}
       />
     );
   }
