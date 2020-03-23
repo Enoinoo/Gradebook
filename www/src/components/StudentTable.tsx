@@ -29,7 +29,7 @@ import MaterialTable, { Column, Icons } from "material-table";
 
 interface Student {
   name: string;
-  grade: number;
+  grade: number | string;
 }
 
 interface IState {
@@ -137,7 +137,7 @@ class StudentTable extends React.Component<IProps, IState> {
             onClick: () => {
               const students = this.state.students;
               students.forEach(student => {
-                student.grade += 2;
+                if (typeof student.grade === "number") student.grade += 2;
               });
               this.setState({ students });
             }
@@ -151,7 +151,12 @@ class StudentTable extends React.Component<IProps, IState> {
                 if (oldData) {
                   this.setState(() => {
                     const students: Student[] = this.state.students;
-                    const updatedGrade: number = newData.grade;
+                    const updatedGrade: number =
+                      typeof newData.grade === "number"
+                        ? newData.grade
+                        : typeof newData.grade === "string"
+                        ? parseFloat(newData.grade)
+                        : 0;
                     students[students.indexOf(oldData)].grade = updatedGrade;
                     return { students };
                   });
@@ -159,7 +164,7 @@ class StudentTable extends React.Component<IProps, IState> {
               }, 600);
             })
         }}
-        options={{ pageSize: NUMBEROFSTUDENTS }}
+        options={{ pageSize: 5 }}
       />
     );
   }
