@@ -1,14 +1,5 @@
-import React, { forwardRef } from "react";
-import { makeStyles } from "@material-ui/core/styles";
-import Table from "@material-ui/core/Table";
-import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
-import TableContainer from "@material-ui/core/TableContainer";
-import TableHead from "@material-ui/core/TableHead";
-import TableRow from "@material-ui/core/TableRow";
-import Paper from "@material-ui/core/Paper";
+import React, { forwardRef, useState, useEffect, useReducer } from "react";
 import { SvgIconProps } from "@material-ui/core/SvgIcon";
-
 import AddBox from "@material-ui/icons/AddBox";
 import ArrowUpward from "@material-ui/icons/ArrowUpward";
 import Check from "@material-ui/icons/Check";
@@ -28,18 +19,18 @@ import ViewColumn from "@material-ui/icons/ViewColumn";
 import MaterialTable, { Column, Icons } from "material-table";
 
 interface Student {
+  id: string;
   name: string;
-  grade: number | string;
+  grade: number;
 }
 
-interface IState {
-  columns: Array<Column<Student>>;
-  students: Student[];
+interface Action {
+  type: "add" | "update" | "addToAll";
+  value?: Student;
 }
 
-interface IProps {}
-
-const NUMBEROFSTUDENTS = 1000;
+const NUMBEROFSTUDENTS = 10;
+const ADDTOALLVALUE = 2;
 
 const tableIcons: Icons = {
   Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
@@ -62,112 +53,109 @@ const tableIcons: Icons = {
   Search: forwardRef((props, ref) => <Search {...props} ref={ref} />),
   SortArrow: forwardRef((props, ref) => <ArrowUpward {...props} ref={ref} />),
   ThirdStateCheck: forwardRef((props, ref) => <Remove {...props} ref={ref} />),
-  ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />)
+  ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />),
 };
 
-/*
-const useStyles = makeStyles({
-  table: {
-    minWidth: 650
+function reducer(students: Student[], action: Action) {
+  switch (action.type) {
+    case "add":
+      if (action.value) return [...students, action.value];
+      else {
+        throw new Error("Incorrect input for adding a student.");
+      }
+    case "update":
+      if (action.value) {
+        var updatedStudents: Student[] = [];
+        students.forEach((student) => {
+          if (student.id == action.value?.id) {
+            updatedStudents.push({
+              id: student.id,
+              name: action.value.name,
+              grade: action.value.grade,
+            });
+          } else updatedStudents.push(student);
+        });
+        //var foundIndex = students.findIndex((x) => x.id == action.value?.id);
+        //students[foundIndex] = action.value;
+        return updatedStudents;
+      }
+    default:
+      return students;
   }
-});*/
-
-/*
-function createData(name: string, grade: number) {
-  return { name, grade };
 }
 
-const rows = [
-  createData("Enoch Lin", 90),
-  createData("Andy Kay", 100),
-  createData("Bill Gates", 67)
-];*/
+function StudentTable() {
+  const [columns, setColumns] = useState<Array<Column<Student>>>([
+    { title: "Student Name", field: "name", editable: "never" },
+    { title: "Grade", field: "grade", type: "numeric" },
+  ]);
 
-class StudentTable extends React.Component<IProps, IState> {
-  constructor(props: IProps) {
-    super(props);
+  const [students, dispatch] = useReducer(reducer, []);
 
-    this.state = {
-      columns: [
-        { title: "Student Name", field: "name", editable: "never" },
-        { title: "Grade", field: "grade", type: "numeric" }
-      ],
-      students: [
-        {
-          name: "",
-          grade: 0
-        }
-      ]
-    };
-  }
-
-  componentDidMount() {
+  useEffect(() => {
     fetch("https://randomuser.me/api/?results=" + NUMBEROFSTUDENTS)
-      .then(response => response.json())
-      .then(response => {
+      .then((response) => response.json())
+      .then((response) => {
         var results = response.results;
-        var students: Student[] = [];
         results.forEach((result: any) => {
           var student: Student = {
+            id: result.login.uuid,
             name: result.name.first + " " + result.name.last,
-            grade: Math.floor(Math.random() * 101)
+            grade: Math.floor(Math.random() * 101),
           };
-          students.push(student);
+          dispatch({ type: "add", value: student });
         });
-        this.setState({
-          students
-        });
-        //console.log(response.results);
-        //console.log(this.state.students);
       });
-  }
+  }, []);
 
-  render() {
-    return (
-      <MaterialTable
-        title="STUDENTS"
-        icons={tableIcons}
-        columns={this.state.columns}
-        data={this.state.students}
-        actions={[
-          {
-            icon: () => (<AddBox />) as React.ReactElement<SvgIconProps>,
-            tooltip: "Add Scores to All",
-            isFreeAction: true,
-            onClick: () => {
-              const students = this.state.students;
-              students.forEach(student => {
-                if (typeof student.grade === "number") student.grade += 2;
-              });
-              this.setState({ students });
-            }
-          }
-        ]}
-        editable={{
-          onRowUpdate: (newData, oldData) =>
-            new Promise(resolve => {
-              setTimeout(() => {
-                resolve();
-                if (oldData) {
-                  this.setState(() => {
-                    const students: Student[] = this.state.students;
-                    const updatedGrade: number =
-                      typeof newData.grade === "number"
-                        ? newData.grade
-                        : typeof newData.grade === "string"
-                        ? parseFloat(newData.grade)
-                        : 0;
-                    students[students.indexOf(oldData)].grade = updatedGrade;
-                    return { students };
-                  });
-                }
-              }, 600);
-            })
-        }}
-        options={{ pageSize: 5 }}
-      />
-    );
-  }
+  return (
+    <MaterialTable
+      title="STUDENTS"
+      icons={tableIcons}
+      columns={columns}
+      data={students}
+      actions={[
+        {
+          icon: () => (<AddBox />) as React.ReactElement<SvgIconProps>,
+          tooltip: "Add Scores to All",
+          isFreeAction: true,
+          onClick: () => {
+            students.forEach((student) => {
+              const updatedValue = {
+                id: student.id,
+                name: student.name,
+                grade: student.grade + ADDTOALLVALUE,
+              };
+              dispatch({ type: "update", value: updatedValue });
+            });
+          },
+        },
+      ]}
+      editable={{
+        onRowUpdate: (newData, oldData) =>
+          new Promise((resolve) => {
+            setTimeout(() => {
+              resolve();
+              if (oldData) {
+                const updatedGrade: number =
+                  typeof newData.grade === "number"
+                    ? newData.grade
+                    : typeof newData.grade === "string"
+                    ? parseFloat(newData.grade)
+                    : 0;
+                const updatedStudent = {
+                  id: oldData.id,
+                  name: oldData.name,
+                  grade: updatedGrade,
+                };
+                dispatch({ type: "update", value: updatedStudent });
+              }
+            }, 600);
+          }),
+      }}
+      options={{ pageSize: NUMBEROFSTUDENTS }}
+    />
+  );
 }
 
 export default StudentTable;
